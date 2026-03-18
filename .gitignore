@@ -1,5 +1,4 @@
 node_modules/
 .env
-database.json
 .DS_Store
 npm-debug.log

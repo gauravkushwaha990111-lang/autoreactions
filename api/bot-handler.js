@@ -1,6 +1,8 @@
 import { startMessage, donateMessage } from './constants.js';
 import { getRandomPositiveReaction, splitEmojis } from './helper.js';
 import { MongoClient } from 'mongodb';
+import fs from 'fs';
+import path from 'path';
 
 // Memory aur DB me chats aur states yaad rakhne ke liye
 let activeChats = new Set();
@@ -31,6 +33,24 @@ export async function initDB(uri, AdminId, botApi) {
             if (data.additionalAdmins) additionalAdmins = new Set(data.additionalAdmins);
             if (data.bannedChats) bannedChats = new Set(data.bannedChats);
             if (data.customReactions) customReactions = data.customReactions;
+        } else {
+            // Naya Database hone par: Local database.json check karo aur MongoDB me migrate (transfer) kar do
+            const DB_FILE = path.join(process.cwd(), 'database.json');
+            if (fs.existsSync(DB_FILE)) {
+                console.log("📦 Migrating local database.json to MongoDB...");
+                try {
+                    const localData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+                    if (localData.activeChats) activeChats = new Set(localData.activeChats);
+                    if (localData.additionalAdmins) additionalAdmins = new Set(localData.additionalAdmins);
+                    if (localData.bannedChats) bannedChats = new Set(localData.bannedChats);
+                    if (localData.customReactions) customReactions = localData.customReactions;
+                    
+                    saveDatabase(); // MongoDB me data save kar do
+                    console.log("✅ Migration complete! Data has been transferred to MongoDB.");
+                } catch (e) {
+                    console.error("Migration Error:", e);
+                }
+            }
         }
         console.log("✅ MongoDB Connected and Data Loaded!");
 
