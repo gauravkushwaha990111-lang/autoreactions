@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 
 const botToken = process.env.BOT_TOKEN;
-const botUsername = process.env.BOT_USERNAME;
+const botUsername = process.env.BOT_USERNAME ? process.env.BOT_USERNAME.replace('@', '') : '';
 const Reactions = splitEmojis(process.env.EMOJI_LIST);
 const AdminId = process.env.ADMIN_ID ? parseInt(process.env.ADMIN_ID) : null;
 
@@ -43,6 +43,10 @@ const startPolling = async () => {
             }
         }
     } catch (error) {
+        if (error.message && error.message.includes('Unauthorized')) {
+            console.error('🚨 CRITICAL ERROR: Bot Token is INVALID or REVOKED! Polling stopped to prevent spam. Please check your BOT_TOKEN in Render Environment Variables.');
+            return; // Stop the infinite loop
+        }
         // Polling errors ko chupchap ignore karo taaki app crash na ho
     }
     
