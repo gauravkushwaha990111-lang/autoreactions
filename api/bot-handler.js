@@ -293,6 +293,24 @@ export async function onUpdate(data, botApi, Reactions, botUsername, AdminId) {
                 [ { "text": "➕ Add Reaction", "callback_data": "admin_add_reaction" }, { "text": "➖ Remove Reaction", "callback_data": "admin_remove_reaction" } ],
                 [ { "text": "📋 View Admins", "callback_data": "admin_list" } ]
             ]);
+        } else if (data.message && text === '/migrate' && isAdmin) {
+            const DB_FILE = path.join(process.cwd(), 'database.json');
+            if (fs.existsSync(DB_FILE)) {
+                try {
+                    const localData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+                    if (localData.activeChats) localData.activeChats.forEach(c => activeChats.add(c));
+                    if (localData.additionalAdmins) localData.additionalAdmins.forEach(a => additionalAdmins.add(a));
+                    if (localData.bannedChats) localData.bannedChats.forEach(b => bannedChats.add(b));
+                    if (localData.customReactions && localData.customReactions.length > 0) customReactions = localData.customReactions;
+                    
+                    saveDatabase();
+                    await botApi.sendMessage(chatId, "✅ Migration forced! Data from database.json has been merged into MongoDB.");
+                } catch (e) {
+                    await botApi.sendMessage(chatId, `❌ Migration Error: ${e.message}`);
+                }
+            } else {
+                await botApi.sendMessage(chatId, "❌ database.json not found on the server.");
+            }
         } else if (data.message && text === '/cancel' && isAdmin && currentState) {
             adminStates.delete(senderId);
             await botApi.sendMessage(chatId, "❌ Action cancelled.");
