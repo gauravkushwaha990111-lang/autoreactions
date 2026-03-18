@@ -304,7 +304,19 @@ export async function onUpdate(data, botApi, Reactions, botUsername, AdminId) {
                     if (localData.customReactions && localData.customReactions.length > 0) customReactions = localData.customReactions;
                     
                     saveDatabase();
-                    await botApi.sendMessage(chatId, "✅ Migration forced! Data from database.json has been merged into MongoDB.");
+
+                    // Migrated admins ke liye Telegram Menu (Left Pin) update karein
+                    const adminCommands = [
+                        { command: 'start', description: 'Start the bot' },
+                        { command: 'reactions', description: 'View available reactions' },
+                        { command: 'donate', description: 'Support the bot' },
+                        { command: 'admin', description: 'Advanced Admin Panel' }
+                    ];
+                    for (const admin of additionalAdmins) {
+                        await botApi.setMyCommands(adminCommands, { type: 'chat', chat_id: admin }).catch(() => {});
+                    }
+
+                    await botApi.sendMessage(chatId, `✅ Migration Successful!\n\n👥 Admins Restored: ${additionalAdmins.size}\n💬 Active Chats: ${activeChats.size}\n🔥 Reactions Restored: ${customReactions.join(', ')}`);
                 } catch (e) {
                     await botApi.sendMessage(chatId, `❌ Migration Error: ${e.message}`);
                 }
